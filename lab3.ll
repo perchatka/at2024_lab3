@@ -1,74 +1,79 @@
-%option c++
-%option noyywrap
 %option yylineno
+%option c++ noyywrap
+%option yyclass="lab3::MyLexer"
 
 %{
 
 #include "lab3.tab.hh"
-#include <fstream>
-#include <stdlib.h>
+#include "scan.hh"
 
-void yyerror(const std::string);
+#undef YY_DECL
+#define YY_DECL int lab3::MyLexer::yylex(yy::parser::value_type *yylval)
+
+/*void yyerror(const std::string);*/
 dirOpr getDir(char);
+
+typedef yy::parser::token token;
 	
 %}
 
 %%
 
-"bool"	{ return yy::parser::token::BOOLTYPE; }
-"int"	{ return yy::parser::token::INTTYPE; }
-"cell"	{ return yy::parser::token::CELLTYPE; }
-"array"	{ return yy::parser::token::ARRTYPE; }
+"bool"	{ return token::BOOLTYPE; }
+"int"	{ return token::INTTYPE; }
+"cell"	{ return token::CELLTYPE; }
+"array"	{ return token::ARRTYPE; }
 
 "true"|"false"	{
-	yy::parser::yylval->emplace<bool>() = (std::string(YYText()) == "true" ? true : false );
-	return yy::parser::token::BOOL; 
+	yylval->emplace<bool>((std::string(YYText()) == "true" ? true : false ));
+	return token::BOOL; 
 }
 
 [0-9]+ {
-    yy::parser::yylval->emplace<int>() = atoi(yytext);
-    return yy::parser::token::INTEGER;
+    yylval->emplace<int>( atoi(YYText()) );
+    return token::INTEGER;
 }
 
 "^_^"|"v_v"|"<_<"|">_>"  {
-    yy::parser::yylval->emplace<int> = getDir(YYText()[0]);
-    return yy::parser::token::MOVOPER;
+    yylval->emplace<dirOpr>(getDir(YYText()[0]) );
+    return token::MOVOPER;
 }
 
 [^v<>]"_0"  {
-    yy::parser::yylval->emplace<int> = getDir(YYText()[0]);
-    return yy::parser::token::DISTMEAS;
+    yylval->emplace<dirOpr>(getDir(YYText()[0]) );
+    return token::DISTMEAS;
 }
 
-"*_*"   { return yy::parser::token::GETPOS; }
-"=>"    { return yy::parser::token::CELLMEMB; }
-"||"    { return yy::parser::token::OR; }
-"&&"    { return yy::parser::token::AND; }
-">="    { return yy::parser::token::GE; }
-"<="    { return yy::parser::token::LE; }
-"<=>"   { return yy::parser::token::TYPECOMPAR; }
-"=="    { return yy::parser::token::EQ; }
-"!="    { return yy::parser::token::NE; }
-"for"   { return yy::parser::token::FOR; }
-"do"    { return yy::parser::token::DO; }
-"end"   { return yy::parser::token::END; }
-"if"    { return yy::parser::token::IF; }
-"else"  { return yy::parser::token::ELSE; }
-"print" { return yy::parser::token::PRINT; }
-"goto"  { return yy::parser::token::GOTO; }
-"return"    { return yy::parser::token::RETURN; }
+"*_*"   { return token::GETPOS; }
+"=>"    { return token::CELLMEMB; }
+"||"    { return token::OR; }
+"&&"    { return token::AND; }
+">="    { return token::GE; }
+"<="    { return token::LE; }
+"<=>"   { return token::TYPECOMPAR; }
+"=="    { return token::EQ; }
+"!="    { return token::NE; }
+"for"   { return token::FOR; }
+"do"    { return token::DO; }
+"end"   { return token::END; }
+"if"    { return token::IF; }
+"else"  { return token::ELSE; }
+"print" { return token::PRINT; }
+"goto"  { return token::GOTO; }
+"return"    { return token::RETURN; }
+"sizeof"	{ return token::SIZEOF; }
 
 [A-Za-z][A-Za-z0-9]* {
-    yy::parser::yylval->emplace<id> = YYText()[0];
-    return yy::parser::token::VARIABLE;
+    yylval->emplace<std::string>(YYText() );
+    return token::VARIABLE;
 }
 
 [-()~<>=+;:{}.] {
-    return yy::YYText()[0];
+    return YYText()[0];
 }
 
 [ \t\n]+    {}
-.       { yyerror("Unknown character"); }
+.       { return token::YYerror; }
 
 %%
 
@@ -87,7 +92,6 @@ dirOpr getDir(char c) {
         return dirLeft;
         break;
     }
-	yyerror("Unknown direction operator.");
 	return dirUp;
 }
 

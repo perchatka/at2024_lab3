@@ -2,7 +2,7 @@
 #include "lab3.h"
 #include "lab3.tab.h"
 
-using namespace yy;
+using namespace lab3;
 
 char lbl = 0;
 int ex(nodeType *p) {
@@ -10,7 +10,7 @@ int ex(nodeType *p) {
     if (lbl == p->label)
         lbl = 0;
     if (!lbl)
-        switch(p->type) {
+        switch(p->getType()) {
         case typeCon: return p->con.value;
         case typeId: return sym[p->id.s[0] - 'a'];
         case typeOpr:
